@@ -1,8 +1,10 @@
 require('helper')
 local test = require('tape')('test ReadStream')
+local stream = require('../modules/stream')
+
 local fs = require('fs')
 local path = require('path')
-local stream = require('../modules/stream')
+local string = require('string')
 
 local ReadStream = require('../lib/read_stream').ReadStream
 local ReadOptions = require('../lib/read_stream').ReadOptions
@@ -29,10 +31,28 @@ end
 test('read all', nil, function(t)
   local tmp_file = path.join(__dirname, 'tmp', 'read_all')
   fs.writeFileSync(tmp_file, text)
+
   local rs = ReadStream:new(tmp_file)
+
   local sink = Sink:new()
   sink:once('finish', function()
     t:equal(text, sink.text, 'incorrect data from ReadStream')
+    t:finish()
+  end)
+  rs:pipe(sink)
+end)
+
+test('read length', nil, function(t)
+  local tmp_file = path.join(__dirname, 'tmp', 'read_length')
+  fs.writeFileSync(tmp_file, text)
+
+  local options = ReadOptions:new()
+  options.length  = 64
+  local rs = ReadStream:new(tmp_file, options)
+
+  local sink = Sink:new()
+  sink:once('finish', function()
+    t:equal(string.sub(text, 1, options.length), sink.text, 'incorrect data from ReadStream')
     t:finish()
   end)
   rs:pipe(sink)
