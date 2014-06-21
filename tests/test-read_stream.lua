@@ -1,6 +1,6 @@
 require('helper')
 local test = require('tape')('test ReadStream')
-local stream = require('../modules/stream')
+local stream = require('stream')
 
 local fs = require('fs')
 local path = require('path')

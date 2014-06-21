@@ -2,7 +2,7 @@ local core = require('core')
 local pathlib = require('path')
 local fs = require('fs')
 
-local Readable = require('../modules/stream').Readable
+local Readable = require('stream').Readable
 
 local ReadOptions = core.Object:extend()
 
@@ -56,14 +56,14 @@ function ReadStream:open()
 end
 
 function ReadStream:_read(n)
+  if self.destroyed then
+    return
+  end
+
   if self.fd == nil then
     self:once('open', function()
       self:_read(n)
     end)
-    return
-  end
-
-  if self.destroyed then
     return
   end
 
