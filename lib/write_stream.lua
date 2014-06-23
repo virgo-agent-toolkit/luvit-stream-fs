@@ -79,6 +79,7 @@ function WriteStream:_write(data, encoding, callback)
       end)
       self.writing = false
     else
+      self.offset = self.offset + len
       callback()
     end
   end)
