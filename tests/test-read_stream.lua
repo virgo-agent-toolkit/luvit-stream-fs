@@ -57,3 +57,23 @@ test('read length', nil, function(t)
   end)
   rs:pipe(sink)
 end)
+
+test('read large', nil, function(t)
+  local tmp_file = path.join(__dirname, 'tmp', 'read_large')
+  local l = 0
+  local large = ''
+  while l <= 16 * 1024 do -- default hwm in Readable
+    l = l + string.len(text)
+    large = large .. text
+  end
+  fs.writeFileSync(tmp_file, large)
+
+  local rs = ReadStream:new(tmp_file)
+
+  local sink = Sink:new()
+  sink:once('finish', function()
+    t:equal(large, sink.text, 'incorrect data from ReadStream')
+    t:finish()
+  end)
+  rs:pipe(sink)
+end)

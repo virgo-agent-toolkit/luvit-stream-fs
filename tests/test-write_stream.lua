@@ -18,16 +18,17 @@ proident, sunt in culpa qui officia deserunt mollit anim id est laborum.]]
 
 local Source = stream.Readable:extend()
 
-function Source:initialize()
+function Source:initialize(data)
   stream.Readable.initialize(self)
   self.pos = 1
+  self.data = data or text
 end
 
 function Source:_read(n)
-  if self.pos > string.len(text) then
+  if self.pos > string.len(self.data) then
     self:push(nil)
   else
-    self:push(string.sub(text, self.pos, self.pos + n))
+    self:push(string.sub(self.data, self.pos, self.pos + n - 1))
     self.pos = self.pos + n
   end
 end
@@ -46,17 +47,23 @@ test('simple write', nil, function(t)
   source:pipe(ws)
 end)
 
-test('write with small chunksize', nil, function(t)
-  local tmp_file = path.join(__dirname, 'tmp', 'write_with_small_chunksize')
+test('write large', nil, function(t)
+  local tmp_file = path.join(__dirname, 'tmp', 'write_large')
+
+  local large = ''
+  local l = 0
+  while l <= 16 * 1024 do -- default hwm in Writable
+    l = l + string.len(text)
+    large = large .. text
+  end
 
   local options = WriteOptions:new()
-  options.chunk_size  = 8
   local ws = WriteStream:new(tmp_file, options)
 
-  local source = Source:new()
+  local source = Source:new(large)
   ws:once('finish', function()
     local written = fs.readFileSync(tmp_file)
-    t:equal(text, written, 'incorrect data from ReadStream')
+    t:equal(large, written, 'incorrect data from ReadStream')
     t:finish()
   end)
   source:pipe(ws)
