@@ -25,6 +25,7 @@ return {
       name = "Rob Emanuele",
       email = "rje@ieee.org",
       url = "http://rob.emanuele.us/",
+    },
   },
   licenses = {"Apache-2.0"},
   dependencies = {
