@@ -106,7 +106,7 @@ function ReadStream:destroy(callback)
     callback()
   else
     -- fd is not opened yet
-    process.nextTick(function()
+    self:once('open', function()
       self:destroy(callback)
     end)
   end
