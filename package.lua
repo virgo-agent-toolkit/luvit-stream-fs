@@ -30,5 +30,8 @@ return {
   dependencies = {
     "stream",
   },
+  devDependencies = {
+    "tape",
+  },
   main = 'init.lua',
 }
