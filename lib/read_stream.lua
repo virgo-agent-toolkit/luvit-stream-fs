@@ -10,7 +10,6 @@ function ReadOptions:initialize()
   self.flags = 'r'
   self.mode = '0644'
   self.offset = 0
-  self.chunk_size = 65536
   self.fd = nil
   self.length = nil
 end
@@ -21,7 +20,6 @@ function ReadStream:initialize(path, options)
   Readable.initialize(self)
 
   self.destroyed = false
-  self.reading = false
 
   self.path = path
   self.options = options or ReadOptions:new()
@@ -67,22 +65,13 @@ function ReadStream:_read(n)
     return
   end
 
-  if self.reading then
-    process.nextTick(function()
-      self:_read(n)
-    end)
-    return
-  end
-
-  local to_read = self.options.chunk_size
+  local to_read = n
   if self.last ~= nil then
     -- indicating length was set in option; need to check boundary
     if to_read + self.offset > self.last then
       to_read = self.last - self.offset
     end
   end
-
-  self.reading = true
 
   fs.read(self.fd, self.offset, to_read, function(err, chunk, len)
     if err or len == 0 then
@@ -92,13 +81,11 @@ function ReadStream:_read(n)
       if err then
         self:emit("error", err)
       end
-      self.reading = false
     else
       self:push(chunk)
-      self.offset = self.offset + len
-      self.reading = false
     end
   end)
+  self.offset = self.offset + to_read
 end
 
 function ReadStream:destroy(callback)

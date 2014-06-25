@@ -1,6 +1,7 @@
 local core = require('core')
 local pathlib = require('path')
 local fs = require('fs')
+local string = require('string')
 
 local Writable = require('stream').Writable
 
@@ -10,7 +11,6 @@ function WriteOptions:initialize()
   self.flags = 'w'
   self.mode = '0644'
   self.offset = 0
-  self.chunk_size = 65536
   self.fd = nil
 end
 
@@ -20,7 +20,6 @@ function WriteStream:initialize(path, options)
   Writable.initialize(self)
 
   self.destroyed = false
-  self.writing = false
 
   self.path = path
   self.options = options or WriteOptions:new()
@@ -57,32 +56,22 @@ function WriteStream:_write(data, encoding, callback)
   end
 
   if self.fd == nil then
-    self:on('open', function()
+    self:once('open', function()
       self:_write(data, encoding, callback)
     end)
     return
   end
-
-  if self.writing then
-    process.nextTick(function()
-      self:_write(data, encoding, callback)
-    end)
-    return
-  end
-
-  self.writing = true
 
   fs.write(self.fd, self.offset, data, function(err, len)
     if err or len == 0 then
       self:destroy(function()
         callback(err)
       end)
-      self.writing = false
     else
-      self.offset = self.offset + len
       callback()
     end
   end)
+  self.offset = self.offset + string.len(data)
 end
 
 function WriteStream:destroy(callback)
